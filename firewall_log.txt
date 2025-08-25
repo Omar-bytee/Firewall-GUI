@@ -1,0 +1,3 @@
+[2025-08-25 05:21:13] EXEC - Command: nft add table inet gui_fw
+[2025-08-25 05:21:13] EXEC - Command: nft add chain inet gui_fw input { type filter hook input priority 0 ; policy accept ; }
+[2025-08-25 05:21:14] EXEC - Command: nft add chain inet gui_fw output { type filter hook output priority 0 ; policy accept ; }
