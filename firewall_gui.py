@@ -1,29 +1,3 @@
-
-#!/usr/bin/env python3
-# Firewall GUI v2 — auto-detects nftables or iptables
-# Notes:
-# - Prefer nftables if available; fallback to iptables.
-# - Requires root to apply rules. Run with: sudo python3 firewall_gui_v2.py
-# - Tested conceptually for demo/education. Use with caution on production systems.
-#
-# Features:
-# - Block/Allow custom ports (INPUT/OUTPUT)
-# - Block/Allow domains (resolves all A records that Python can find via getaddrinfo)
-# - Block IP addresses
-# - View rules table (supports both nft and iptables; deletion supported for iptables; and for nft via handle when available)
-# - Reset firewall rules (flush)
-# - Set default policy (DROP/ACCEPT) per chain for both backends
-# - Logging to firewall_log.txt
-#
-# Persistence:
-# - This GUI does not install permanent boot-time rules. To persist across reboot,
-#   export the rules and load them via systemd or your distro's firewall mechanism.
-#   Buttons for export/import are included per backend.
-#
-# DISCLAIMER:
-# Misconfiguration can lock you out of the network. Prefer local/VM testing first.
-# You are responsible for your system's security posture.
-
 import os
 import sys
 import re
@@ -45,7 +19,7 @@ def command_exists(cmd):
     return shutil.which(cmd) is not None
 
 def detect_backend():
-    # Prefer nft if present
+    
     if command_exists("nft"):
         return "nft"
     elif command_exists("iptables"):
@@ -59,7 +33,7 @@ def log_action(action, cmd):
         log.write(f"{timestamp} {action} - Command: {cmd}\n")
 
 def run(cmd, check=True):
-    # cmd: list[str] or str
+    
     try:
         if isinstance(cmd, list):
             subprocess.run(cmd, check=check)
@@ -91,7 +65,6 @@ class NftBackend:
 
     @classmethod
     def ensure_table_and_chains(cls):
-        # Create table and standard chains if missing
         run(["nft", "add", "table", cls.family, cls.table], check=False)
         # Input chain with hook
         run(["nft", "add", "chain", cls.family, cls.table, cls.chain_input, 
@@ -138,7 +111,7 @@ class NftBackend:
 
     @classmethod
     def list_rules(cls):
-        # Return structured list for display
+        
         rules = []
         for chain_name, display_chain in [(cls.chain_input, "INPUT"), (cls.chain_output, "OUTPUT")]:
             ok, _ = NftBackend.ensure_and_list_chain(chain_name)
@@ -177,7 +150,7 @@ class NftBackend:
 
     @classmethod
     def ensure_and_list_chain(cls, chain_name):
-        # Ensure chains exist silently
+        
         NftBackend.ensure_table_and_chains()
         ok, err = run(["nft", "list", "chain", cls.family, cls.table, chain_name], check=False)
         if not ok:
@@ -191,7 +164,7 @@ class NftBackend:
 
     @classmethod
     def reset(cls):
-        # Flush and delete our table
+        
         run(["nft", "flush", "table", cls.family, cls.table], check=False)
         run(["nft", "delete", "table", cls.family, cls.table], check=False)
         return True, None
@@ -273,7 +246,7 @@ class IptablesBackend:
 
     @classmethod
     def reset(cls):
-        # Flush and set ACCEPT to avoid lockouts
+        
         for chain in ["INPUT", "OUTPUT", "FORWARD"]:
             run(["iptables", "-P", chain, "ACCEPT"], check=False)
             run(["iptables", "-F", chain], check=False)
@@ -306,14 +279,14 @@ def ensure_backend():
     global BACKEND
     BACKEND = detect_backend()
     if BACKEND is None:
-        messagebox.showerror("Firewall GUI v2", "Neither nft nor iptables was found on this system.")
+        messagebox.showerror("Firewall GUI", "Neither nft nor iptables was found on this system.")
         sys.exit(1)
     if BACKEND == "nft":
         NftBackend.ensure_table_and_chains()
 
 def require_root_or_exit():
     if not is_root():
-        messagebox.showerror("Firewall GUI v2", "This tool must be run as root. Try: sudo python3 firewall_gui_v2.py")
+        messagebox.showerror("Firewall GUI", "This tool must be run as root. Try: sudo python3 firewall_gui.py")
         sys.exit(1)
 
 def ui_block_port():
@@ -550,12 +523,12 @@ def ui_view_log():
 
 def main():
     if not is_root():
-        print("[!] This tool must be run as root. Try: sudo python3 firewall_gui_v2.py")
-        # Also show a Tk message dialog for clarity if launched from GUI
+        print("[!] This tool must be run as root. Try: sudo python3 firewall_gui.py")
+        
         try:
             root = tk.Tk()
             root.withdraw()
-            messagebox.showerror("Firewall GUI v2", "This tool must be run as root. Try: sudo python3 firewall_gui_v2.py")
+            messagebox.showerror("Firewall GUI", "This tool must be run as root. Try: sudo python3 firewall_gui.py")
         except Exception:
             pass
         sys.exit(1)
@@ -563,7 +536,7 @@ def main():
     ensure_backend()
 
     window = tk.Tk()
-    window.title("Firewall GUI v2")
+    window.title("Firewall GUI")
 
     tk.Button(window, text="Block Custom Port (TCP, In/Out)", width=60, command=ui_block_port).pack(pady=5)
     tk.Button(window, text="Allow Custom Port (TCP, In/Out)", width=60, command=ui_allow_port).pack(pady=5)

@@ -85,7 +85,7 @@ sudo nft list ruleset
 curl http://example.com #Connection should fail.
 ```
 4- Allow the Port again → restores HTTP access.
-## ⚠️ Notes
+## ⚠️ Notes & Limitations
 
 Domain blocking: implemented by resolving domains to IP addresses. If a domain uses many IPs (e.g., Google, YouTube), only the resolved IPs are blocked. For stronger DNS-level blocking, consider using /etc/hosts or dnsmasq.
 
